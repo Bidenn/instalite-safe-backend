@@ -1,0 +1,59 @@
+stages:
+  - build
+  - test
+  - sonar
+  - security
+  - deploy
+
+# Job to install dependencies
+install_dependencies:
+  stage: build
+  image: node:16  # Use your desired image (e.g., for Node.js)
+  script:
+    - npm install
+
+# Job for running tests (e.g., unit tests)
+run_tests:
+  stage: test
+  image: node:16  # Or your appropriate testing image
+  script:
+    - npm test
+
+# Job for SonarQube analysis
+sonar_analysis:
+  stage: sonar
+  image: sonarsource/sonar-scanner-cli:latest
+  variables:
+    SONAR_HOST_URL: "https://sonarcloud.io"  # Replace with your SonarQube instance URL
+    SONAR_LOGIN: "${SONAR_TOKEN}"  # SonarQube token as a secret variable
+  script:
+    - sonar-scanner \
+        -Dsonar.projectKey=your_project_key \
+        -Dsonar.sources=src \
+        -Dsonar.tests=test \
+        -Dsonar.login=$SONAR_TOKEN
+
+# Job for OWASP ZAP security scanning
+zap_scan:
+  stage: security
+  image: owasp/zap2docker-stable  # Official ZAP Docker image
+  services:
+    - name: docker:19.03.12  # Docker service for running the ZAP container
+      alias: docker
+  variables:
+    DISPLAY: ":99"
+  script:
+    - docker pull owasp/zap2docker-stable  # Pull the ZAP image
+    - docker run -u zap -d -t zaproxy/zap2docker-stable zap-baseline.py -t "http://yourapp-url.com" -g gen.conf -r zap-report.html
+    - docker cp zap:/zap/wrk/ zap-report.html .
+
+  artifacts:
+    paths:
+      - zap-report.html  # Save ZAP report as an artifact
+
+# Deploy job (you can deploy to your production environment here)
+deploy:
+  stage: deploy
+  script:
+    - echo "Deploying to production..."
+    # Add your deployment commands here
