@@ -1,32 +1,22 @@
-// models/Post.js
-
 const { DataTypes } = require('sequelize');
-const sequelize = require('../config/config'); // Your Sequelize instance
-const User = require('./User'); // Import the User model for association
+const sequelize = require('../config/sequelize');
 
 const Post = sequelize.define('Post', {
-  content: { 
-    type: DataTypes.STRING, 
-    allowNull: false 
-  },
-  caption: { 
-    type: DataTypes.STRING, 
-    allowNull: true 
-  },
-  userId: { 
-    type: DataTypes.INTEGER, 
-    allowNull: false,
-    references: {
-      model: User,       // Reference the User model
-      key: 'id',         // Foreign key reference to User's 'id'
+    content: {
+        type: DataTypes.TEXT,
+        allowNull: false, // Posts must have content
     },
-  },
-});
-
-// Define the association between Post and User
-Post.belongsTo(User, {
-  foreignKey: 'userId',  // Foreign key in Post model
-  as: 'user',            // Alias for easy inclusion in queries
+    caption: {
+        type: DataTypes.STRING,
+        allowNull: true, // Caption is optional
+    },
+    userId: {
+        type: DataTypes.INTEGER,
+        allowNull: false, // Posts must be associated with a user
+    },
+}, {
+    tableName: 'Posts', // Explicit table name
+    timestamps: true, // Adds `createdAt` and `updatedAt` columns
 });
 
 module.exports = Post;

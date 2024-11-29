@@ -7,11 +7,11 @@ const authenticateJWT = (req, res, next) => {
         return res.status(401).json({ error: 'Token is required' });
     }
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, (err, auth) => {
         if (err) {
             return res.status(403).json({ error: 'Invalid token' });
         }
-        req.user = user;
+        req.auth = auth;
         next();
     });
 };

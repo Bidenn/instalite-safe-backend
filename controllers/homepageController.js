@@ -1,45 +1,112 @@
-const Post = require('../models/Post');
-const User = require('../models/User');
-const { authenticateJWT } = require('../middlewares/authenticateJWT'); // To verify the token
+const { Auth, Profile, Post, Mutual } = require('../models');
 
-// Homepage route to get all posts along with logged-in user's data
-exports.homepage = [
-  authenticateJWT, // Middleware to verify token and get logged-in user data
-  async (req, res) => {
+// Fetch homepage data for the logged-in user
+const getHomepageData = async (req, res) => {
     try {
-      // Extract logged-in user data from the token payload (provided by authenticateJWT middleware)
-      const loggedUserId = req.user.id;
+        const authId = req.auth.id; // The logged-in user
 
-      // Fetch the logged-in user data from the database
-      const loggedUser = await User.findByPk(loggedUserId, {
-        attributes: ['id', 'username', 'profilePhoto'], // Fetch relevant user details
-      });
+        // Fetch logged-in user data (username, profilePhoto)
+        const loggedUser = await Auth.findByPk(authId, {
+            attributes: ['username'],
+            include: [
+                {
+                    model: Profile,
+                    attributes: ['profilePhoto'], // Profile photo of the logged-in user
+                },
+            ],
+        });
 
-      if (!loggedUser) {
-        return res.status(404).json({ error: 'Logged-in user not found' });
-      }
+        if (!loggedUser) {
+            return res.status(404).json({ error: 'User not found' });
+        }
 
-      // Fetch all posts along with their associated user data
-      const posts = await Post.findAll({
-        include: [
-          {
-            model: User,
-            as: 'user', // The alias defined in the association
-            attributes: ['id', 'username', 'profilePhoto'], // Include user details
-          },
-        ],
-        order: [['createdAt', 'DESC']], // Order posts by creation date (newest first)
-      });
+        // Fetch mutual friends of the logged-in user (users who are following each other)
+        const mutualFriends = await Mutual.findAll({
+            where: {
+                [Op.or]: [
+                    { followerId: authId },
+                    { followedId: authId },
+                ],
+                mutualStatus: 'accepted',
+            },
+            include: [
+                {
+                    model: Auth,
+                    as: 'follower', // Get follower details
+                    attributes: ['username'],
+                    include: [
+                        {
+                            model: Profile,
+                            attributes: ['profilePhoto'], // Profile photo of the follower
+                        },
+                    ],
+                },
+                {
+                    model: Auth,
+                    as: 'followed', // Get followed details
+                    attributes: ['username'],
+                    include: [
+                        {
+                            model: Profile,
+                            attributes: ['profilePhoto'], // Profile photo of the followed user
+                        },
+                    ],
+                },
+            ],
+        });
 
-      // Send the posts and logged-in user data as a response
-      res.json({
-        message: 'Posts and logged-in user data retrieved successfully',
-        posts: posts || [], // Ensure posts is always an array, even if null
-        loggedUser,
-      });
+        // Prepare mutual friends list (from both follower and followed)
+        const mutualFriendsData = mutualFriends.map((mutual) => {
+            const friend = mutual.followerId === authId ? mutual.followed : mutual.follower;
+            return {
+                username: friend.username,
+                profilePhoto: friend.Profile ? friend.Profile.profilePhoto : null,
+            };
+        });
+
+        // Fetch posts from logged-in user and mutual friends
+        const postUserIds = [authId, ...mutualFriendsData.map(friend => friend.username)];
+        const posts = await Post.findAll({
+            where: {
+                userId: {
+                    [Op.in]: postUserIds,
+                },
+            },
+            include: [
+                {
+                    model: Auth,
+                    attributes: ['username'],
+                },
+                {
+                    model: Profile,
+                    attributes: ['profilePhoto'],
+                },
+            ],
+            order: [['createdAt', 'DESC']], // Optional: order posts by latest
+        });
+
+        res.json({
+            loggedUser: {
+                username: loggedUser.username,
+                profilePhoto: loggedUser.Profile ? loggedUser.Profile.profilePhoto : null,
+            },
+            mutualFriends: mutualFriendsData,
+            posts: posts.map(post => ({
+                id: post.id,
+                caption: post.caption,
+                content: post.content,
+                createdAt: post.createdAt,
+                username: post.Auth.username,
+                profilePhoto: post.Profile ? post.Profile.profilePhoto : null,
+            })),
+        });
     } catch (error) {
-      console.error('Error fetching posts:', error);
-      res.status(500).json({ error: 'Failed to retrieve posts', details: error.message });
+        console.error('Error fetching homepage data:', error);
+        res.status(500).json({ error: 'Failed to fetch homepage data' });
     }
-  },
-];
+};
+
+// Exporting controller functions
+module.exports = {
+    getHomepageData,
+};

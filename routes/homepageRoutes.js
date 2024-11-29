@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { homepage } = require('../controllers/homepageController');
-const { authenticateJWT } = require('../middlewares/authenticateJWT');
+const { getHomepageData } = require('../controllers/homepageController');
+const { authenticateJWT } = require('../middlewares/authenticateJWT'); // Assuming you're using JWT for authentication
 
-// Use verifyToken middleware to protect the route
-router.get('', authenticateJWT, homepage);
+// Homepage route to fetch data for the logged-in user, mutual friends, and posts
+router.get('/homepage', authenticateJWT, getHomepageData);
 
 module.exports = router;

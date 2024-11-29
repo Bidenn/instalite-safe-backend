@@ -1,17 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const { login, register, logout, verifyEmail } = require('../controllers/authController');
+const authController = require('../controllers/authController');
 
-// User registration
-router.post('/register', register);
+// Register route - Step 1: User Registration & Send Email Verification
+router.post('/register', authController.register);
 
-// User login
-router.post('/login', login);
+// Verify Email route - Step 2: Email Verification and Create User Profile
+router.get('/verify-email', authController.verifyEmail);
 
-// User logout
-router.post('/logout', logout);
+// Login route - User Login
+router.post('/login', authController.login);
 
-// Email verification
-router.get('/verify', verifyEmail);
+// Logout route - Optional for JWT-based authentication (could just remove token on client-side)
+router.post('/logout', authController.logout);
+
+// Request Reset Password - Send Reset Email with Token
+router.post('/reset-password', authController.getResetPassword);
+
+// Store Reset Password - After Verifying Token and Changing Password
+router.post('/reset-password/confirm', authController.storeResetPassword);
 
 module.exports = router;

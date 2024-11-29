@@ -1,29 +1,33 @@
-const Post = require('../models/Post');
+const { Post, Auth, Profile } = require('../models');
 const { upload } = require('../middlewares/uploadPost');
-const User = require('../models/User');
 
-exports.storePost = [
-    upload.single('content'),
+// Store new post
+const storePost = [
+    upload.single('content'), // Image file upload middleware
     async (req, res) => {
         try {
-            const userId = req.user.id;
+            const authId = req.auth.id;  // The ID of the authenticated user making the request
             const { caption } = req.body;
 
+            // Validate caption
             if (!caption) {
                 return res.status(400).json({ error: 'Caption is required' });
             }
 
+            // Validate file upload
             if (!req.file) {
                 return res.status(400).json({ error: 'Please upload an image' });
             }
 
-            const imageUrl = req.file.filename;
+            const imageUrl = req.file.filename; // File name of the uploaded image
+            // Create a new post entry in the database
             const post = await Post.create({
-                userId,
+                authId,
                 caption,
                 content: imageUrl,
             });
 
+            // Respond with success message and post ID
             res.status(201).json({
                 message: 'Post created successfully!',
                 postId: post.id,
@@ -36,21 +40,29 @@ exports.storePost = [
     }
 ];
 
-
-exports.deletePost = async (req, res) => {
+// Delete post (only the post creator can delete)
+const deletePost = async (req, res) => {
     try {
-        const { postId } = req.params;
-        const { userId } = req.body;
+        const { postId } = req.params;  // Post ID to be deleted
+        const authId = req.auth.id;  // ID of the authenticated user making the request
 
-        // **Broken Access Control**: The function does not verify if the userId matches the post owner.
+        // Find the post by ID
         const post = await Post.findOne({ where: { id: postId } });
+
+        // Check if the post exists
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        // No check on whether the user is the owner of the post
+        // **Access Control**: Ensure that only the post creator (authId) can delete the post
+        if (post.userId !== authId) {
+            return res.status(403).json({ error: 'You are not authorized to delete this post' });
+        }
+
+        // Delete the post if the user is the creator
         await Post.destroy({ where: { id: postId } });
 
+        // Respond with success message
         res.json({ message: 'Post deleted successfully' });
     } catch (error) {
         console.error('Error deleting post:', error);
@@ -58,30 +70,8 @@ exports.deletePost = async (req, res) => {
     }
 };
 
-
-exports.getAllPosts = async (req, res) => {
-    try {
-        const posts = await Post.findAll();
-        res.json(posts);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve posts', details: error.message });
-    }
-};
-
-exports.getUserPosts = async (req, res) => {
-    try {
-        const { userId } = req.params;
-        const posts = await Post.findAll({ where: { userId } });
-        if (posts.length === 0) {
-            return res.status(404).json({ error: 'No posts found for this user' });
-        }
-        res.json(posts);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to retrieve posts for this user', details: error.message });
-    }
-};
-
-exports.getPostDetails = async (req, res) => {
+// Get post details along with the creator's profile info
+const detailPost = async (req, res) => {
     try {
         const { postId } = req.params;
 
@@ -89,21 +79,27 @@ exports.getPostDetails = async (req, res) => {
         const post = await Post.findOne({
             where: { id: postId },
             include: {
-                model: User, // Assuming the associated model is 'User'
-                as: 'user', // Use the alias for the association
-                attributes: ['id', 'username', 'profilePhoto'], // Adjust the attributes as needed
+                model: Profile,  // Assuming Profile is related to the User model
+                as: 'user',  // Alias for the relationship in the Post model
+                attributes: ['id', 'username', 'profilePhoto'],  // Adjust fields to include user info
             },
         });
 
+        // Check if the post exists
         if (!post) {
             return res.status(404).json({ error: 'Post not found' });
         }
 
-        // Respond with post details along with poster data
+        // Respond with the post details and the poster data
         res.json(post);
     } catch (error) {
         res.status(500).json({ error: 'Failed to retrieve post details', details: error.message });
     }
 };
 
-
+// Export the controller functions
+module.exports = {
+    storePost,
+    deletePost,
+    detailPost,
+};
