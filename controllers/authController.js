@@ -10,6 +10,8 @@ const register = async (req, res) => {
     try {
         const { email, password } = req.body;
 
+        console.log(req.body);
+
         // Validate input
         if (!email || !password) {
             return res.status(400).json({ error: 'Email and password are required' });
@@ -56,12 +58,12 @@ const verifyEmail = async (req, res) => {
 
         // Decode the token
         const decodedToken = jwt.verify(token, JWT_SECRET);
-        const { email, password } = decodedToken;
+        const { email, hashedPassword } = decodedToken;
 
         // Create the Auth user
         const auth = await Auth.create({
             email: email,
-            password: password,
+            password: hashedPassword,
         });
 
         // Create associated Profile

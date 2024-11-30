@@ -13,9 +13,10 @@ const getProfileData = async (req, res) => {
             include: [
                 {
                     model: Auth,
-                    attributes: ['username', 'email'] // Include username and email from Auth model
-                }
-            ]
+                    as: 'user', // Match the alias in the association
+                    attributes: ['username', 'email'], // Include username and email from Auth model
+                },
+            ],
         });
 
         if (!profile) {
@@ -41,9 +42,10 @@ const getProfile = async (req, res) => {
             include: [
                 {
                     model: Auth,
-                    attributes: ['username', 'email'] // Include username and email from Auth model
-                }
-            ]
+                    as: 'user', // Match the alias in the association
+                    attributes: ['username', 'email'], // Include username and email from Auth model
+                },
+            ],
         });
 
         if (!profile) {
@@ -54,12 +56,12 @@ const getProfile = async (req, res) => {
         const posts = await Post.findAll({
             where: { userId: authId },
             attributes: ['id', 'caption', 'content', 'createdAt'],
-            order: [['createdAt', 'DESC']] // Optional: order posts by latest
+            order: [['createdAt', 'DESC']], // Optional: order posts by latest
         });
 
         res.json({
-            profile,  // Include profile data
-            posts     // Include posts associated with the user
+            profile, // Include profile data
+            posts,   // Include posts associated with the user
         });
     } catch (error) {
         console.error('Error fetching user profile with posts:', error);
