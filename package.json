@@ -14,7 +14,8 @@
     "uuid": "^11.0.3"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "dev": "nodemon app.js"
   },
   "devDependencies": {
     "jest": "^29.7.0"
