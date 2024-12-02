@@ -3,56 +3,60 @@ const sequelize = require("../config/sequelize");
 
 // Import all models
 const Auth = require("./Auth");
-const Profile = require("./Profile");
 const Post = require("./Post");
 const Like = require("./Like");
-const Comment = require("./Comment");
 const Mutual = require("./Mutual");
+const Comment = require("./Comment");
+const Profile = require("./Profile");
 
-// Define Associations
-
-// 1. Auth -> Profile (One-to-One)
-Auth.hasOne(Profile, { foreignKey: "userId", as: "profile" });
-Profile.belongsTo(Auth, { foreignKey: "userId", as: "user" });
-
-// 2. Auth -> Post (One-to-Many)
-// Auth.hasMany(Post, { foreignKey: "userId", as: "posts" });
-// Post.belongsTo(Auth, { foreignKey: "userId", as: "author" });
-
-// 3. Post -> Like (One-to-Many)
-Post.hasMany(Like, { foreignKey: "postId", as: "likes" });
-Like.belongsTo(Post, { foreignKey: "postId", as: "post" });
-
-// 4. Post -> Comment (One-to-Many)
-Post.hasMany(Comment, { foreignKey: "postId", as: "comments" });
-Comment.belongsTo(Post, { foreignKey: "postId", as: "post" });
-
-// 5. Auth -> Like (One-to-Many)
+// 1. Auth Model Associations
+// An Auth user can have many posts, likes, comments, and followings
+Auth.hasMany(Post, { foreignKey: "userId", as: "posts" });
 Auth.hasMany(Like, { foreignKey: "userId", as: "likes" });
+Auth.hasMany(Comment, { foreignKey: "userId", as: "comments" });
+Auth.hasMany(Mutual, { foreignKey: "userId", as: "followings" });  // Who this user follows
+Auth.hasMany(Mutual, { foreignKey: "followingId", as: "followers" });  // Who follows this user
+Auth.hasOne(Profile, { foreignKey: "userId", as: "profile" }); // One-to-one relationship with profile
+
+// 2. Post Model Associations
+// A Post belongs to one Auth user (the author) and can have many likes and comments
+Post.belongsTo(Auth, { foreignKey: "userId", as: "author" });  // Post's author (Auth)
+Post.hasMany(Like, { foreignKey: "postId", as: "likes" });  // Likes for this post
+Post.hasMany(Comment, { foreignKey: "postId", as: "comments" });  // Comments for this post
+Post.belongsTo(Profile, { foreignKey: "userId", as: "authorProfile" });  // Author's profile
+
+// 3. Like Model Associations
+// A Like belongs to one Post and one Auth user
+Like.belongsTo(Post, { foreignKey: "postId", as: "post" });
 Like.belongsTo(Auth, { foreignKey: "userId", as: "user" });
 
-// 6. Auth -> Comment (One-to-Many)
-Auth.hasMany(Comment, { foreignKey: "userId", as: "comments" });
+// 4. Mutual (Follow/Followers) Model Associations
+// A Mutual relationship defines following and followed users
+Mutual.belongsTo(Auth, { foreignKey: "userId", as: "followedUser" });  // The followed user
+Mutual.belongsTo(Auth, { foreignKey: "followingId", as: "followingUser" });  // The following user
+
+// 5. Comment Model Associations
+// A Comment belongs to one Auth user (the author) and one Post
 Comment.belongsTo(Auth, { foreignKey: "userId", as: "user" });
+Comment.belongsTo(Post, { foreignKey: "postId", as: "post" });
 
-// 7. Mutuals (Self-referencing for Following/Followers)
-Auth.hasMany(Mutual, { foreignKey: "userId", as: "followings" }); // Who this user follows
-Auth.hasMany(Mutual, { foreignKey: "followingId", as: "followers" }); // Who follows this user
-Mutual.belongsTo(Auth, { foreignKey: "userId", as: "followedUser" });
-Mutual.belongsTo(Auth, { foreignKey: "followingId", as: "followingUser" });
+// 6. Profile Model Associations
+// A Profile belongs to one Auth user and can have many posts, likes, and comments
+Profile.belongsTo(Auth, { foreignKey: "userId", as: "user" });  // Profile owner (Auth user)
+Profile.hasMany(Post, { foreignKey: "userId" });  // A profile can have many posts
+Profile.hasMany(Like, { foreignKey: "userId", as: "profileLikes" });  // Likes from this profile
+Profile.hasMany(Comment, { foreignKey: "userId", as: "profileComments" });  // Comments from this profile
 
-// 8. Profile -> Posts, Likes, Comments (Optional Extended Associations)
-// Profile.hasMany(Post, { foreignKey: "userId", as: "profilePosts" });
-Profile.hasMany(Like, { foreignKey: "userId", as: "profileLikes" });
-Profile.hasMany(Comment, { foreignKey: "userId", as: "profileComments" });
+// Two associations for Profile (hasMany and belongsTo) to handle its relationship to Auth and Post
+Profile.belongsTo(Auth, { foreignKey: "userId", as: "profileOwner" });  // To ensure it's tied to the Auth user
 
-// Sync or Export models and Sequelize instance
+// Export all models and Sequelize instance for use in other parts of the application
 module.exports = {
-  sequelize,
-  Auth,
-  Profile,
-  Post,
-  Like,
-  Comment,
-  Mutual,
+    sequelize,
+    Auth,
+    Profile,
+    Post,
+    Like,
+    Comment,
+    Mutual,
 };

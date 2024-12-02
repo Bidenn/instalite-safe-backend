@@ -1,135 +1,107 @@
 const { Mutual, Auth } = require('../models');
 
-// User A sends follow request to User B
-const sendFollowRequest = async (req, res) => {
+const followUser = async (req, res) => {
     try {
-        const followerId = req.auth.id; // The user who wants to send the follow request (User A)
-        const { followedId } = req.body; // The user to be followed (User B)
+        const userId = req.auth.id; // User yang ingin mengikuti
+        const { followingId } = req.body; // User yang akan diikuti
 
-        if (!followedId) {
-            return res.status(400).json({ error: 'Followed user ID is required' });
+        if (!followingId) {
+            return res.status(400).json({ error: 'ID pengguna yang akan diikuti diperlukan' });
         }
 
-        // Ensure the user is not trying to follow themselves
-        if (followerId === followedId) {
-            return res.status(400).json({ error: 'You cannot send a follow request to yourself' });
+        if (userId === followingId) {
+            return res.status(400).json({ error: 'Anda tidak dapat mengikuti diri sendiri' });
         }
 
-        // Check if the user exists
-        const followedUser = await Auth.findByPk(followedId);
+        // Pastikan pengguna yang akan diikuti ada
+        const userToFollow = await Auth.findByPk(followingId);
 
-        if (!followedUser) {
-            return res.status(404).json({ error: 'User to send follow request to not found' });
+        if (!userToFollow) {
+            return res.status(404).json({ error: 'Pengguna yang ingin diikuti tidak ditemukan' });
         }
 
-        // Check if the follow request already exists (i.e., the follower has already requested)
-        const existingRequest = await Mutual.findOne({
-            where: { followerId, followedId, mutualStatus: 'requested' }
-        });
+        // Cek apakah sudah mengikuti
+        const alreadyFollowing = await Mutual.findOne({ where: { userId, followingId } });
 
-        if (existingRequest) {
-            return res.status(400).json({ error: 'You have already sent a follow request to this user' });
+        if (alreadyFollowing) {
+            return res.status(400).json({ error: 'Anda sudah mengikuti pengguna ini' });
         }
 
-        // Create a new follow request with 'requested' mutual status
-        await Mutual.create({
-            followerId,
-            followedId,
-            mutualStatus: 'requested',
-        });
+        // Tambahkan data mengikuti
+        await Mutual.create({ userId, followingId });
 
-        res.status(201).json({ message: 'Follow request sent successfully' });
+        res.status(201).json({ message: 'Berhasil mengikuti pengguna' });
     } catch (error) {
-        console.error('Error sending follow request:', error);
-        res.status(500).json({ error: 'Failed to send follow request' });
+        console.error('Error saat mengikuti pengguna:', error);
+        res.status(500).json({ error: 'Gagal mengikuti pengguna' });
     }
 };
 
-// View all pending follow requests for User B
-const viewPendingRequests = async (req, res) => {
+const unfollowUser = async (req, res) => {
     try {
-        const authId = req.auth.id; // The user who wants to see the pending requests (User B)
+        const userId = req.auth.id; // User yang ingin berhenti mengikuti
+        const { followingId } = req.body; // User yang akan berhenti diikuti
 
-        // Find all follow requests where the user is the followed user and the status is 'requested'
-        const pendingRequests = await Mutual.findAll({
-            where: { followedId: authId, mutualStatus: 'requested' },
-            include: [{ model: Mutual, as: 'follower', attributes: ['id', 'username', 'email'] }] // Include user who sent the request
-        });
-
-        if (!pendingRequests.length) {
-            return res.status(200).json({ message: 'No pending requests' });
+        if (!followingId) {
+            return res.status(400).json({ error: 'ID pengguna yang akan berhenti diikuti diperlukan' });
         }
 
-        res.status(200).json(pendingRequests);
+        // Cek apakah pengguna sudah diikuti
+        const followRelation = await Mutual.findOne({ where: { userId, followingId } });
+
+        if (!followRelation) {
+            return res.status(404).json({ error: 'Anda tidak mengikuti pengguna ini' });
+        }
+
+        // Hapus relasi mengikuti
+        await followRelation.destroy();
+
+        res.status(200).json({ message: 'Berhasil berhenti mengikuti pengguna' });
     } catch (error) {
-        console.error('Error viewing pending requests:', error);
-        res.status(500).json({ error: 'Failed to retrieve pending requests' });
+        console.error('Error saat berhenti mengikuti pengguna:', error);
+        res.status(500).json({ error: 'Gagal berhenti mengikuti pengguna' });
     }
 };
 
-// Accept a follow request from User B (User B accepts User A's request)
-const acceptFollowRequest = async (req, res) => {
+const viewFollowing = async (req, res) => {
     try {
-        const authId = req.auth.id; // User B (who will accept the request)
-        const { followerId } = req.body; // User A (who sent the request)
+        const userId = req.auth.id; // ID pengguna yang sedang login
 
-        if (!followerId) {
-            return res.status(400).json({ error: 'Follower user ID is required' });
-        }
-
-        // Check if the follow request exists and is in the 'requested' status
-        const followRequest = await Mutual.findOne({
-            where: { followerId, followedId: authId, mutualStatus: 'requested' },
+        // Temukan semua pengguna yang diikuti
+        const following = await Mutual.findAll({
+            where: { userId },
+            include: [{ model: Auth, as: 'followingUser', attributes: ['id', 'username', 'email'] }],
         });
 
-        if (!followRequest) {
-            return res.status(404).json({ error: 'Follow request not found' });
-        }
-
-        // Update the mutual status of both records to 'accepted'
-        await Mutual.update({ mutualStatus: 'accepted' }, { where: { followerId, followedId: authId } });
-        await Mutual.update({ mutualStatus: 'accepted' }, { where: { followerId: authId, followedId: followerId } });
-
-        res.status(200).json({ message: 'Follow request accepted' });
+        res.status(200).json(following);
     } catch (error) {
-        console.error('Error accepting follow request:', error);
-        res.status(500).json({ error: 'Failed to accept follow request' });
+        console.error('Error saat melihat daftar yang diikuti:', error);
+        res.status(500).json({ error: 'Gagal melihat daftar yang diikuti' });
     }
 };
 
-// Reject or ignore a follow request (this will just delete the request or leave it in 'requested' state)
-const rejectFollowRequest = async (req, res) => {
+
+const viewFollowers = async (req, res) => {
     try {
-        const authId = req.auth.id; // User B (who will reject the request)
-        const { followerId } = req.body; // User A (who sent the request)
+        const userId = req.auth.id; // ID pengguna yang sedang login
 
-        if (!followerId) {
-            return res.status(400).json({ error: 'Follower user ID is required' });
-        }
-
-        // Find the follow request
-        const followRequest = await Mutual.findOne({
-            where: { followerId, followedId: authId, mutualStatus: 'requested' },
+        // Temukan semua pengikut
+        const followers = await Mutual.findAll({
+            where: { followingId: userId },
+            include: [{ model: Auth, as: 'followerUser', attributes: ['id', 'username', 'email'] }],
         });
 
-        if (!followRequest) {
-            return res.status(404).json({ error: 'Follow request not found' });
-        }
-
-        // Delete the follow request (i.e., reject it)
-        await followRequest.destroy();
-
-        res.status(200).json({ message: 'Follow request rejected' });
+        res.status(200).json(followers);
     } catch (error) {
-        console.error('Error rejecting follow request:', error);
-        res.status(500).json({ error: 'Failed to reject follow request' });
+        console.error('Error saat melihat daftar pengikut:', error);
+        res.status(500).json({ error: 'Gagal melihat daftar pengikut' });
     }
 };
 
-// Exporting controller functions
 module.exports = {
-    sendFollowRequest,
-    viewPendingRequests,
-    acceptFollowRequest,
-    rejectFollowRequest,
+    followUser,
+    unfollowUser,
+    viewFollowing,
+    viewFollowers,
 };
+

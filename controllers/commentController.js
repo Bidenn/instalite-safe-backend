@@ -59,8 +59,36 @@ const deleteComment = async (req, res) => {
     }
 };
 
+const getPostComments = async (req, res) => {
+    try {
+        const { postId } = req.params; // Post ID for which to get the like count
+
+        if (!postId) {
+            return res.status(400).json({ error: 'Post ID is required' });
+        }
+
+        // Check if the post exists
+        const post = await Post.findByPk(postId);
+
+        if (!post) {
+            return res.status(404).json({ error: 'Post not found' });
+        }
+
+        // Get the like count for the post
+        const commentCount = await Comment.count({
+            where: { postId },
+        });
+
+        res.status(200).json({ commentCount });
+    } catch (error) {
+        console.error('Error getting post like count:', error);
+        res.status(500).json({ error: 'Failed to fetch like count' });
+    }
+};
+
 // Exporting controller functions
 module.exports = {
     createComment,
     deleteComment,
+    getPostComments
 };
