@@ -50,12 +50,12 @@ const deletePost = async (req, res) => {
 
         // Check if the post exists
         if (!post) {
-        return res.status(404).json({ error: "Post not found" });
+            return res.status(404).json({ error: "Post not found" });
         }
 
         // **Access Control**: Ensure that only the post creator (authId) can delete the post
         if (post.userId !== authId) {
-        return res.status(403).json({ error: "You are not authorized to delete this post" });
+            return res.status(403).json({ error: "You are not authorized to delete this post" });
         }
 
         // Delete the post if the user is the creator
@@ -73,68 +73,61 @@ const deletePost = async (req, res) => {
 const detailPost = async (req, res) => {
     try {
         const { postId } = req.params;
-        const loggedUserId = req.userId; // Assuming `req.userId` contains the logged-in user's ID.
+        const loggedUserId = req.auth.id; 
 
-        // Fetch the post along with the associated user (posterData)
         const post = await Post.findOne({
             where: { id: postId },
             include: [
                 {
                     model: Auth,
-                    as: 'author', // Use alias defined in the model
+                    as: 'author', // Ensure this matches the alias in Post model association
                     attributes: ['username'],
                 },
                 {
                     model: Profile,
-                    as: 'authorProfile', // Alias for the Profile model (ensure this matches the association)
+                    as: 'authorProfile', // Ensure this matches the alias in Post model association
                     attributes: ['profilePhoto'],
                 },
             ],
         });
 
         if (!post) {
-            return res.status(404).json({ error: "Post not found" });
+            const errorResponse = { error: 'Post not found' };
+            return res.status(404).json(errorResponse);
         }
 
-        // Fetch comments along with author data and profile photos
+        // Fetch all comments with correct alias
         const comments = await Comment.findAll({
             where: { postId },
             include: [
                 {
                     model: Auth,
-                    as: 'author',
+                    as: 'user', // Correct alias based on the model association
                     attributes: ['username'],
                 },
                 {
                     model: Profile,
-                    as: 'authorProfile',
+                    as: 'authorProfile', // Ensure this matches the alias in Comment model association
                     attributes: ['profilePhoto'],
                 },
             ],
         });
 
-        // Check if the logged-in user has liked the post
-        const likeRecord = await Like.findOne({
+        const isLiked = !!(await Like.findOne({
             where: { postId, userId: loggedUserId },
-        });
-        const isLiked = !!likeRecord; // Convert to boolean
+        }));
 
-        // Return the combined data
-        res.json({
-            post: {
-                ...post.toJSON(),
-                author: post.author,
-                authorProfile: post.authorProfile,
-            },
-            comments: comments.map(comment => ({
-                ...comment.toJSON(),
-                author: comment.author,
-                authorProfile: comment.authorProfile,
-            })),
+        // Prepare the response
+        const responseData = {
+            post: post.toJSON(),
+            comments: comments.map(comment => comment.toJSON()),
             isLiked,
-        });
+        };
+
+        return res.json(responseData);
     } catch (error) {
-        res.status(500).json({ error: "Failed to retrieve post details", details: error.message });
+        const errorResponse = { error: 'Failed to retrieve post details', details: error.message };
+        return res.status(500).json(errorResponse);
     }
 };
 

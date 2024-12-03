@@ -39,6 +39,7 @@ Mutual.belongsTo(Auth, { foreignKey: "followingId", as: "followingUser" });  // 
 // A Comment belongs to one Auth user (the author) and one Post
 Comment.belongsTo(Auth, { foreignKey: "userId", as: "user" });
 Comment.belongsTo(Post, { foreignKey: "postId", as: "post" });
+Comment.belongsTo(Profile, { foreignKey: "userId", as: "authorProfile" });  // Author's profile
 
 // 6. Profile Model Associations
 // A Profile belongs to one Auth user and can have many posts, likes, and comments
