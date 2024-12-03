@@ -18,12 +18,12 @@ services:
       DB_NAME: ${DB_NAME}
       JWT_SECRET: ${JWT_SECRET}
     depends_on:
-      - db
+      - db2
     networks:
       - app-network  # Attach to the custom network
     container_name: app  # Set a custom container name for the app service
 
-  db:
+  db2:
     image: postgres:15
     ports:
       - "5432:5432"
@@ -37,7 +37,7 @@ services:
       POSTGRES_DB: ${DB_NAME}
     networks:
       - app-network  # Attach to the custom network
-    container_name: db  # Set a custom container name for the db service
+    container_name: db2  # Set a custom container name for the db service
 
 volumes:
   db_data:
