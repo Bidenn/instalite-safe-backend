@@ -17,7 +17,7 @@ COPY . .
 RUN npm install -g nodemon
 
 # Expose port yang digunakan oleh ExpressJS (misalnya port 5000)
-EXPOSE 5000
+EXPOSE 5001
 
 # Perintah untuk menjalankan aplikasi menggunakan nodemon
 CMD ["nodemon", "app.js"]
