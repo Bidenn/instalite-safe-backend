@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: 'http://localhost:3001',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
@@ -31,15 +31,15 @@ sequelize.authenticate()
   .then(() => console.log('Database authenticated'))
   .catch((error) => console.error('Authentication failed:', error));
 
-// sequelize.sync({ force: true })
-//   .then(() => {
-//     console.log('Database synced successfully');
-//   })
-//   .catch((err) => {
-//     console.error('Error syncing database:', err);
-//   });
+sequelize.sync({ force: true })
+  .then(() => {
+    console.log('Database synced successfully');
+  })
+  .catch((err) => {
+    console.error('Error syncing database:', err);
+  });
 
-const port = 5000;
+const port = 5001;
 app.listen(port, () => {
   console.log(`Server running on http://localhost:${port}`);
 });

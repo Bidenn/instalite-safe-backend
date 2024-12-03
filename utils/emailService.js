@@ -9,7 +9,7 @@ const sendVerificationEmail = async (email, token) => {
         },
     });
 
-    const verificationUrl = `http://localhost:3000/verify-email/${token}`; // Update with your frontend URL
+    const verificationUrl = `http://localhost:3001/verify-email/${token}`; // Update with your frontend URL
 
     const mailOptions = {
         from: 'noreply@example.com',
