@@ -21,7 +21,7 @@ services:
       - db2
     networks:
       - app-network  # Attach to the custom network
-    container_name: app  # Set a custom container name for the app service
+    container_name: app2  # Set a custom container name for the app service
 
   db2:
     image: postgres:15
