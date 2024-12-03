@@ -51,24 +51,24 @@ pipeline {
             }
         }
 
-    //     stage('ZAP Scan') {
-    //         agent {
-    //             docker {
-    //                 image 'ghcr.io/zaproxy/zaproxy:stable' // Use the ZAP proxy Docker image
-    //                 args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:/zap/wrk:rw'
-    //             }
-    //         }
-    //         steps {
-    //             catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-    //                 // Perform ZAP baseline scan
-    //                 sh 'zap-baseline.py -t http://localhost:5000 -r zapbaseline.html -x zapbaseline.xml'
-    //             }
-    //             // Copy and archive the ZAP scan results
-    //             sh 'cp /zap/wrk/zapbaseline.html ./zapbaseline.html'
-    //             sh 'cp /zap/wrk/zapbaseline.xml ./zapbaseline.xml'
-    //             archiveArtifacts artifacts: 'zapbaseline.html'
-    //             archiveArtifacts artifacts: 'zapbaseline.xml'
-    //         }
-    //     }
+        stage('ZAP Scan') {
+            agent {
+                docker {
+                    image 'ghcr.io/zaproxy/zaproxy:stable' // Use the ZAP proxy Docker image
+                    args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:/zap/wrk:rw'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    // Perform ZAP baseline scan
+                    sh 'zap-baseline.py -t http://localhost:5000 -r zapbaseline.html -x zapbaseline.xml'
+                }
+                // Copy and archive the ZAP scan results
+                sh 'cp /zap/wrk/zapbaseline.html ./zapbaseline.html'
+                sh 'cp /zap/wrk/zapbaseline.xml ./zapbaseline.xml'
+                archiveArtifacts artifacts: 'zapbaseline.html'
+                archiveArtifacts artifacts: 'zapbaseline.xml'
+            }
+        }
     }
 }
