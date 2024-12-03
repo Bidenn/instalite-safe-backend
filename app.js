@@ -14,7 +14,7 @@ const app = express();
 app.use(bodyParser.json());
 
 app.use(cors({
-  origin: 'http://10.34.4.203:3001',
+  origin: null,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   credentials: true,
 }));
