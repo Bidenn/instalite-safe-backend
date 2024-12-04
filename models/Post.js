@@ -7,7 +7,7 @@ const Post = sequelize.define('Post', {
         allowNull: false, // Posts must have content
     },
     caption: {
-        type: DataTypes.STRING,
+        type: DataTypes.TEXT,
         allowNull: true, // Caption is optional
     },
     userId: {
