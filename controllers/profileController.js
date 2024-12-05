@@ -164,7 +164,7 @@ const getPublicProfile = async (req, res) => {
             attributes: ["id", "caption", "content", "createdAt"],
             order: [["createdAt", "DESC"]], 
         });
-s
+
         res.json({ profile, posts });
     } catch (error) {
         console.error(error);
