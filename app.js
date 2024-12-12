@@ -12,8 +12,10 @@ const app = express();
 
 app.use(bodyParser.json());
 
+const feUrl = process.env.FRONTEND_URL;
+
 app.use(cors({
-    origin: '*',
+    origin: `${feUrl}`,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true,
 }));

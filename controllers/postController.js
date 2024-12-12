@@ -60,6 +60,7 @@ const deletePost = async (req, res) => {
 
 const detailPost = async (req, res) => {
     try {
+        const authId = req.auth.id;
         const { postId } = req.params;
 
         const post = await Post.findOne({
@@ -85,6 +86,7 @@ const detailPost = async (req, res) => {
 
         const responseData = {
             post: post.toJSON(),
+            logged: authId
         };
 
         return res.json(responseData);

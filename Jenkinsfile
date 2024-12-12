@@ -51,24 +51,32 @@ pipeline {
             }
         }
 
-        // stage('ZAP Scan') {
-        //     agent {
-        //         docker {
-        //             image 'ghcr.io/zaproxy/zaproxy:stable' // Use the ZAP proxy Docker image
-        //             args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:/zap/wrk:rw'
-        //         }
-        //     }
-        //     steps {
-        //         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-        //             // Perform ZAP baseline scan
-        //             sh 'zap-baseline.py -t http://localhost:5001 -r zapbaseline.html -x zapbaseline.xml'
-        //         }
-        //         // Copy and archive the ZAP scan results
-        //         sh 'cp /zap/wrk/zapbaseline.html ./zapbaseline.html'
-        //         sh 'cp /zap/wrk/zapbaseline.xml ./zapbaseline.xml'
-        //         archiveArtifacts artifacts: 'zapbaseline.html'
-        //         archiveArtifacts artifacts: 'zapbaseline.xml'
-        //     }
-        // }
+        stage('Install npm Dependencies') {
+            steps {
+                // Execute npm install inside the running backend container
+                sh 'docker exec app2 npm install'
+                sh 'docker exec app2 npm install express'
+            }
+        }
+
+        stage('ZAP Scan') {
+            agent {
+                docker {
+                    image 'ghcr.io/zaproxy/zaproxy:stable' // Use the ZAP proxy Docker image
+                    args '-u root --network host -v /var/run/docker.sock:/var/run/docker.sock -v $WORKSPACE:/zap/wrk:rw'
+                }
+            }
+            steps {
+                catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                    // Perform ZAP baseline scan
+                    sh 'zap-baseline.py -t http://localhost:5001 -r zapbaseline.html -x zapbaseline.xml'
+                }
+                // Copy and archive the ZAP scan results
+                sh 'cp /zap/wrk/zapbaseline.html ./zapbaseline.html'
+                sh 'cp /zap/wrk/zapbaseline.xml ./zapbaseline.xml'
+                archiveArtifacts artifacts: 'zapbaseline.html'
+                archiveArtifacts artifacts: 'zapbaseline.xml'
+            }
+        }
     }
 }

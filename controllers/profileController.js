@@ -174,6 +174,7 @@ const getPublicProfile = async (req, res) => {
 
 const searchProfile = async (req, res) => {
     try {
+        const authUsername = req.auth.username;
         const { username } = req.params;
 
         if (!username) {
@@ -184,6 +185,9 @@ const searchProfile = async (req, res) => {
             where: {
                 username: {
                     [Op.iLike]: `%${username}%`, 
+                },
+                username: {
+                    [Op.ne]: authUsername, 
                 },
             },
             attributes: ['username'],
@@ -213,7 +217,6 @@ const searchProfile = async (req, res) => {
     }
 };
 
-// Exporting controller functions
 module.exports = {
     getProfileData,
     getProfile,

@@ -69,7 +69,7 @@ const login = async (req, res) => {
 
         const { password: _, ...userWithoutPassword } = auth.toJSON();
 
-        const jwtToken = jwt.sign(userWithoutPassword, JWT_SECRET, { expiresIn: '7d' });
+        const jwtToken = jwt.sign(userWithoutPassword, JWT_SECRET, { expiresIn: '1h' });
 
         res.status(200).json({ message: 'Login successful', token: jwtToken });
     } catch (error) {
