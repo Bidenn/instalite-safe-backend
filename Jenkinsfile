@@ -37,6 +37,20 @@ pipeline {
             }
         }
 
+        stage('Copy env-live to .env') {
+            steps {
+                sh '''
+                if [ -f env-live ]; then
+                    cp env-live .env
+                    echo "env-live copied to .env successfully."
+                else
+                    echo "env-live file does not exist. Failing the stage."
+                    exit 1
+                fi
+                '''
+            }
+        }
+
         stage('Remove Containers') {
             steps {
                 // Bring down existing Docker containers
