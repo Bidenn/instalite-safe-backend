@@ -1,4 +1,4 @@
-const { Auth, Profile } = require('../models');
+const { User } = require('../models');
 const argon2 = require('argon2');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
@@ -19,24 +19,16 @@ const register = async (req, res) => {
             });
         }
 
-        const existingUser = await Auth.findOne({ where: { email } });
+        const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
             return res.status(400).json({ error: 'Email is already registered' });
         }
 
         const hashedPassword = await argon2.hash(password);
 
-        const auth = await Auth.create({
+        const auth = await User.create({
             email: email,
             password: hashedPassword,
-        });
-
-        await Profile.create({
-            userId: auth.id,
-            fullName: '',
-            profilePhoto: '',
-            career: '',
-            bio: '',
         });
 
         res.status(200).json({ message: 'Registration Success' });
@@ -54,7 +46,7 @@ const login = async (req, res) => {
             return res.status(400).json({ error: 'Username / Email and Password are required' });
         }
 
-        const auth = await Auth.findOne({
+        const auth = await User.findOne({
             where: { [Op.or]: [{ email: usernameOrEmail }, { username: usernameOrEmail }] },
         });
 

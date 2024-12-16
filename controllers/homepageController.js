@@ -1,33 +1,21 @@
-const { Auth, Profile, Post } = require('../models');
+const { User, Post } = require('../models');
 
 const getHomepageData = async (req, res) => {
     try {
         const authId = req.auth.id; 
 
-        const loggedUser = await Auth.findByPk(authId, {
-            attributes: ['username'],
-        });
+        const loggedUser = await User.findByPk(authId);
 
         if (!loggedUser) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const loggedUserProfile = await Profile.findOne({
-            where: { userId: authId },
-            attributes: ['profilePhoto'],
-        });
-
         const posts = await Post.findAll({
             include: [
                 {
-                    model: Auth,
+                    model: User,
                     as: 'author', 
-                    attributes: ['username'],
-                },
-                {
-                    model: Profile,
-                    as: 'authorProfile',
-                    attributes: ['profilePhoto'],
+                    attributes: ['username', 'photo'],
                 },
             ],
             order: [['createdAt', 'DESC']],
@@ -36,7 +24,7 @@ const getHomepageData = async (req, res) => {
         const response = {
             loggedUser: {
                 username: loggedUser.username,
-                profilePhoto: loggedUserProfile ? loggedUserProfile.profilePhoto : null,
+                profilePhoto: loggedUser.photo,
             },
             posts: posts.map(post => ({
                 id: post.id,
@@ -44,7 +32,7 @@ const getHomepageData = async (req, res) => {
                 content: post.content,
                 createdAt: post.createdAt,
                 username: post.author.username,
-                profilePhoto: post.authorProfile ? post.authorProfile.profilePhoto : null, // Fetch the profile photo of the author
+                photo: post.author.photo ? post.author.photo : null, 
             })),
         };
 

@@ -1,24 +1,23 @@
 const { Sequelize } = require("sequelize");
 const sequelize = require("../config/sequelize");
 
-// Import all models
-const Auth = require("./Auth");
-const Post = require("./Post");
-const Profile = require("./Profile");
+const User = require('./User');
+const Post = require('./Post');
+const Like = require('./Like');
+const Comment = require('./Comment');
 
-Auth.hasMany(Post, { foreignKey: "userId", as: "posts" });
-Auth.hasOne(Profile, { foreignKey: "userId", as: "profile" }); // One-to-one relationship with profile
+User.hasMany(Post, { foreignKey: "userId", as: "posts" });
 
-Post.belongsTo(Auth, { foreignKey: "userId", as: "author" });  // Post's author (Auth)
-Post.belongsTo(Profile, { foreignKey: "userId", as: "authorProfile" });  // Author's profile
+Post.belongsTo(User, { foreignKey: "userId", as: "author" });
+Post.hasMany(Comment, { foreignKey: "postId", as: "comments", onDelete: "CASCADE" });
+Post.hasMany(Like, { foreignKey: "postId", as: "likes", onDelete: "CASCADE" });
 
-Profile.belongsTo(Auth, { foreignKey: "userId", as: "user" });  // Profile owner (Auth user)
-Profile.hasMany(Post, { foreignKey: "userId" });  // A profile can have many posts
-Profile.belongsTo(Auth, { foreignKey: "userId", as: "profileOwner" });  // To ensure it's tied to the Auth user
+Comment.belongsTo(User, { foreignKey: "userId", as: "user" });
 
 module.exports = {
     sequelize,
-    Auth,
-    Profile,
+    User,
     Post,
+    Comment,
+    Like,
 };

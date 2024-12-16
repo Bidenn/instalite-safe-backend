@@ -1,38 +1,34 @@
-const { Post, Auth, Profile } = require("../models");
-const { upload } = require("../middlewares/uploadPost");
+const { Post, User, Like, Comment } = require("../models");
 
-const storePost = [
-    upload.single("content"), async (req, res) => {
-        try {
-            const authId = req.auth.id; 
-            const { caption } = req.body;
+const storePost = async (req, res) => {
+    try {
+        const authId = req.auth.id; 
+        const { caption } = req.body;
 
-            if (!caption) {
-                return res.status(400).json({ error: "Caption is required" });
-            }
-
-            if (!req.file) {
-                return res.status(400).json({ error: "Please upload an image" });
-            }
-
-            const imageUrl = req.file.filename; 
-            const post = await Post.create({
-                userId: authId,
-                caption,
-                content: imageUrl,
-            });
-
-            res.status(201).json({
-                message: "Post created successfully!",
-                postId: post.id,
-                imageUrl,
-            });
-        } catch (error) {
-            console.error("Error creating post:", error);
-            res.status(500).json({ error: "Error creating post. Please try again.", details: error.message });
+        if (!caption) {
+            return res.status(400).json({ error: 'Caption is required' });
         }
-    },
-];
+
+        if (!req.file) {
+            return res.status(400).json({ error: 'Content is required' });
+        }
+
+        const imageUrl = req.file.filename;
+
+        const storePost = await Post.create({
+            userId: authId,
+            caption,
+            content: imageUrl,
+        });
+
+        res.status(201).json({
+            message: 'Post created successfully!',
+        });
+    } catch (error) {
+        console.error("Error updating user profile:", error);
+        res.status(500).json({ error: "Failed to update profile" });
+    }
+};
 
 const deletePost = async (req, res) => {
     try {
@@ -67,14 +63,9 @@ const detailPost = async (req, res) => {
             where: { id: postId },
             include: [
                 {
-                    model: Auth,
+                    model: User,
                     as: 'author', 
-                    attributes: ['username'],
-                },
-                {
-                    model: Profile,
-                    as: 'authorProfile',
-                    attributes: ['profilePhoto'],
+                    attributes: ['username', 'photo'],
                 },
             ],
         });
@@ -84,12 +75,27 @@ const detailPost = async (req, res) => {
             return res.status(404).json(errorResponse);
         }
 
-        const responseData = {
-            post: post.toJSON(),
-            logged: authId
-        };
+        const comments = await Comment.findAll({
+            where: { postId: postId },
+            include: {
+                model: User,
+                as: 'user',
+                attributes: ['id', 'username', 'photo'], 
+            }
+        });
 
-        return res.json(responseData);
+        const likes = await Like.findAll({
+            where: { postId: postId }
+        });
+
+        const totalLikes = likes.length;
+
+        const responseData = {
+            post: post,
+            comments: comments,
+            totalLikes: totalLikes
+        };
+        return res.status(201).json(responseData);
     } catch (error) {
         const errorResponse = { error: 'Failed to retrieve post details', details: error.message };
         return res.status(500).json(errorResponse);
@@ -97,3 +103,36 @@ const detailPost = async (req, res) => {
 };
 
 module.exports = { storePost, deletePost, detailPost };
+
+// const storePost = [
+//     upload.single("content"), async (req, res) => {
+//         try {
+//             const authId = req.auth.id; 
+//             const { caption } = req.body;
+
+//             if (!caption) {
+//                 return res.status(400).json({ error: "Caption is required" });
+//             }
+
+//             if (!req.file) {
+//                 return res.status(400).json({ error: "Please upload an image" });
+//             }
+
+//             const imageUrl = req.file.filename; 
+//             const post = await Post.create({
+//                 userId: authId,
+//                 caption,
+//                 content: imageUrl,
+//             });
+
+//             res.status(201).json({
+//                 message: "Post created successfully!",
+//                 postId: post.id,
+//                 imageUrl,
+//             });
+//         } catch (error) {
+//             console.error("Error creating post:", error);
+//             res.status(500).json({ error: "Error creating post. Please try again.", details: error.message });
+//         }
+//     },
+// ];

@@ -4,19 +4,16 @@ const sequelize = require('../config/sequelize');
 const Post = sequelize.define('Post', {
     content: {
         type: DataTypes.TEXT,
-        allowNull: false, // Posts must have content
+        allowNull: false, 
     },
     caption: {
         type: DataTypes.TEXT,
-        allowNull: true, // Caption is optional
+        allowNull: false, 
     },
     userId: {
         type: DataTypes.INTEGER,
-        allowNull: false, // Posts must be associated with a user
+        allowNull: false,
     },
-}, {
-    tableName: 'Posts', // Explicit table name
-    timestamps: true, // Adds `createdAt` and `updatedAt` columns
 });
 
 module.exports = Post;
