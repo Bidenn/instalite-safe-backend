@@ -141,12 +141,15 @@ const getPublicProfile = async (req, res) => {
 
 const searchPublicProfile = async (req, res) => {
     try {
-        const authUsername = req.auth.username;
+        const authId = req.auth.id;
         const { username } = req.params;
 
         if (!username) {
             return res.status(400).json({ error: "Username is required" });
         }
+
+        const auth = await User.findByPk(authId);
+        const authUsername = auth.username;
 
         const users = await User.findAll({
             where: {
@@ -167,7 +170,7 @@ const searchPublicProfile = async (req, res) => {
 
         const formattedUsers = users.map((user) => ({
             username: user.username,
-            profilePhoto: user.photo || null, 
+            photo: user.photo || null, 
         }));
 
         return res.status(200).json(formattedUsers);

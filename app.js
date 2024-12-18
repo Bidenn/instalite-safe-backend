@@ -25,19 +25,24 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/post', postRoutes);
 app.use('/api/homepage', homepageRoutes);
 
-app.use(express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), {
+    setHeaders: (res, path, stat) => {
+        res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    },
+}));
+
 
 sequelize.authenticate()
     .then(() => console.log('Database authenticated'))
     .catch((error) => console.error('Authentication failed:', error));
 
-// sequelize.sync({ force: true })
-//     .then(() => {
-//         console.log('Database synced successfully');
-//     })
-//     .catch((err) => {
-//         console.error('Error syncing database:', err);
-//     });
+sequelize.sync({ force: true })
+    .then(() => {
+        console.log('Database synced successfully');
+    })
+    .catch((err) => {
+        console.error('Error syncing database:', err);
+    });
 
 const port = 5001;
 

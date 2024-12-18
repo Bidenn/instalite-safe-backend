@@ -16,5 +16,3 @@ router.post('/:postId/comment', authenticateJWT, storeComment);
 router.delete('/comment/:commentId', authenticateJWT, deleteComment); 
 
 module.exports = router;
-
-// router.post('/store', authenticateJWT, storePost);
