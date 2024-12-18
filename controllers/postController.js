@@ -15,7 +15,7 @@ const storePost = async (req, res) => {
 
         const imageUrl = req.file.filename;
 
-        const storePost = await Post.create({
+        Post.create({
             userId: authId,
             caption,
             content: imageUrl,
@@ -56,7 +56,6 @@ const deletePost = async (req, res) => {
 
 const detailPost = async (req, res) => {
     try {
-        const authId = req.auth.id;
         const { postId } = req.params;
 
         const post = await Post.findOne({
@@ -103,36 +102,3 @@ const detailPost = async (req, res) => {
 };
 
 module.exports = { storePost, deletePost, detailPost };
-
-// const storePost = [
-//     upload.single("content"), async (req, res) => {
-//         try {
-//             const authId = req.auth.id; 
-//             const { caption } = req.body;
-
-//             if (!caption) {
-//                 return res.status(400).json({ error: "Caption is required" });
-//             }
-
-//             if (!req.file) {
-//                 return res.status(400).json({ error: "Please upload an image" });
-//             }
-
-//             const imageUrl = req.file.filename; 
-//             const post = await Post.create({
-//                 userId: authId,
-//                 caption,
-//                 content: imageUrl,
-//             });
-
-//             res.status(201).json({
-//                 message: "Post created successfully!",
-//                 postId: post.id,
-//                 imageUrl,
-//             });
-//         } catch (error) {
-//             console.error("Error creating post:", error);
-//             res.status(500).json({ error: "Error creating post. Please try again.", details: error.message });
-//         }
-//     },
-// ];

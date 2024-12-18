@@ -1,6 +1,5 @@
 const Comment = require('../models/Comment'); 
 const Post = require('../models/Post');
-const User = require('../models/User');
 
 const storeComment = async (req, res) => {
     console.log(req);

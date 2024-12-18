@@ -26,7 +26,7 @@ const register = async (req, res) => {
 
         const hashedPassword = await argon2.hash(password);
 
-        const auth = await User.create({
+        User.create({
             email: email,
             password: hashedPassword,
         });

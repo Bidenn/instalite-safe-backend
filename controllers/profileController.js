@@ -155,9 +155,7 @@ const searchPublicProfile = async (req, res) => {
             where: {
                 username: {
                     [Op.iLike]: `%${username}%`, 
-                },
-                username: {
-                    [Op.ne]: authUsername, 
+                    [Op.ne]: authUsername,
                 },
             },
             attributes: ['username'],
